@@ -4,33 +4,23 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>macos-net-autoorder</title>
-<meta name="description" content="유선 품질이 나빠지면 macOS 네트워크 서비스 순서를 바꿔 다른 회선으로 넘어가게 하는 LaunchDaemon">
+<meta name="description" content="유선이 느려지거나 패킷이 새면 macOS가 다른 회선으로 넘어가게 해 주는 LaunchDaemon">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <style>
 :root {
-  --bg: #EDF0F3;
-  --panel: #FFFFFF;
+  --bg: #FFFFFF;
   --ink: #18202B;
   --muted: #5B6675;
-  --line: #D5DBE2;
-  --good: #2E9E4F;
-  --warn: #C98410;
-  --bad: #CC4236;
   --link: #2459C4;
-  --code-bg: #E2E7EC;
+  --code-bg: #EEF1F4;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #151A21;
-    --panel: #1E252E;
     --ink: #E6EAEF;
     --muted: #9AA5B3;
-    --line: #2F3843;
-    --good: #46BE69;
-    --warn: #E0A23A;
-    --bad: #E8685C;
     --link: #79A2F2;
-    --code-bg: #262E38;
+    --code-bg: #232B35;
   }
 }
 * { box-sizing: border-box; }
@@ -41,199 +31,46 @@ body {
   color: var(--ink);
   font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
   font-size: 17px;
-  line-height: 1.7;
+  line-height: 1.75;
   word-break: keep-all;
 }
-main { max-width: 44rem; margin: 0 auto; padding: 72px 16px 96px; }
+main { max-width: 42rem; margin: 0 auto; padding: 56px 16px 80px; }
 a { color: var(--link); }
 :focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+h1 { font-size: 30px; line-height: 1.3; letter-spacing: -0.01em; margin: 0 0 16px; }
+h2 { font-size: 20px; margin: 48px 0 10px; }
+p { margin: 0 0 14px; }
+ul { padding-left: 1.2em; margin: 0; }
+li { margin-bottom: 8px; }
 code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88em; }
 code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; }
-pre { background: var(--code-bg); padding: 16px 18px; border-radius: 8px; overflow-x: auto; line-height: 1.55; }
+pre { background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; line-height: 1.6; margin: 0 0 16px; }
 pre code { background: none; padding: 0; }
-
-.name { font-size: 15px; font-weight: 600; color: var(--muted); margin: 0 0 20px; }
-h1 { font-size: clamp(34px, 7vw, 52px); line-height: 1.2; letter-spacing: -0.02em; font-weight: 750; margin: 0 0 20px; }
-.lede { font-size: 19px; color: var(--muted); margin: 0 0 48px; max-width: 36rem; }
-h2 { font-size: 22px; letter-spacing: -0.01em; margin: 64px 0 12px; }
-p { margin: 0 0 14px; }
-ul { padding-left: 1.2em; margin: 0 0 14px; }
-li { margin-bottom: 6px; }
-
-/* 데모 */
-.demo { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 8px 0 0; }
-.demo-head { padding: 12px 20px 4px; font-size: 14px; color: var(--muted); }
-ol.services { list-style: none; margin: 0; padding: 0; }
-.svc { display: grid; grid-template-columns: 28px 1fr; gap: 4px 12px; padding: 16px 20px; border-top: 1px solid var(--line); background: var(--panel); position: relative; }
-.svc:first-child { border-top: 0; }
-.rank { font-weight: 700; font-size: 20px; color: var(--muted); line-height: 1.3; }
-.svc:first-child .rank { color: var(--ink); }
-.svc-title { display: flex; align-items: center; gap: 8px; font-weight: 650; line-height: 1.3; }
-.dot { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--good); }
-.dot.warn { background: var(--warn); }
-.dot.bad { background: var(--bad); }
-.svc-title small { font-weight: 400; color: var(--muted); font-size: 14px; }
-.sliders { grid-column: 2; display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px; }
-label { display: block; font-size: 14px; color: var(--muted); }
-label output { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
-input[type=range] { width: 100%; accent-color: var(--link); margin: 4px 0 0; }
-.traffic { grid-column: 2; display: none; }
-.svc:first-child .traffic { display: block; }
-.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 16px 20px; border-top: 1px solid var(--line); }
-button { font: inherit; font-weight: 600; font-size: 15px; color: #fff; background: var(--link); border: 0; border-radius: 8px; padding: 10px 16px; cursor: pointer; }
-@media (prefers-color-scheme: dark) { button { color: #0F1620; } }
-.verdict { font-size: 15px; color: var(--muted); flex: 1 1 16rem; }
-.verdict strong { color: var(--ink); }
-
-@media (max-width: 520px) {
-  main { padding-top: 48px; }
-  .sliders { grid-template-columns: 1fr; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .svc { transition: none !important; }
-}
-footer { margin-top: 72px; font-size: 14px; color: var(--muted); }
+footer { margin-top: 48px; font-size: 15px; color: var(--muted); }
 </style>
 </head>
 <body>
 <main>
-  <p class="name">macos-net-autoorder</p>
-  <h1>유선이 나빠지면 다른 회선으로 넘어간다</h1>
-  <p class="lede">macOS는 유선이 꽂혀 있으면 패킷이 새고 느려져도 Wi-Fi로 넘어가지 않는다. 링크가 끊기거나 IP를 못 받는 것처럼 연결 자체가 안 될 때만 순위를 내리기 때문이다. macos-net-autoorder는 5분마다 모든 회선에 ping을 보내 확실히 나은 회선을 서비스 순서 맨 위로 올린다.</p>
+  <h1>macos-net-autoorder</h1>
+  <p>유선이 연결된 채로 느려지거나 패킷이 새면 Wi-Fi 같은 다른 회선으로 넘어가게 해 주는 macOS LaunchDaemon이다. macOS는 링크가 끊기거나 IP를 못 받을 때만 다른 회선으로 넘어가기 때문에, 이 스크립트가 5분마다 IPv4 주소가 있는 모든 네트워크 서비스에 ping을 보내고 손실률과 RTT가 확실히 나은 서비스를 서비스 순서 맨 위로 올린다.</p>
 
-  <section class="demo" aria-labelledby="demo-title">
-    <p class="demo-head" id="demo-title">회선 상태를 바꾸고 다음 주기를 돌려 보자. 실제 스크립트와 같은 규칙으로 순서가 바뀐다.</p>
-    <ol class="services" id="services"></ol>
-    <div class="controls">
-      <button type="button" id="run">다음 주기 실행</button>
-      <p class="verdict" id="verdict" aria-live="polite">아직 실행하지 않았다.</p>
-    </div>
-  </section>
-
-  <h2>설치</h2>
 <pre><code>git clone https://github.com/wonjiko/macos-net-autoorder.git
 cd macos-net-autoorder
-./net-autoorder.sh --dry-run   # 30초 동안 재고, 바꿀 순서만 출력한다
 sudo ./install.sh</code></pre>
-  <p>서비스 순서를 바꾸려면 root 권한이 필요해서 LaunchDaemon으로 설치된다. 실행할 때마다 회선별 손실률과 RTT, 순서를 바꿨는지가 로그에 한 줄씩 남는다.</p>
-<pre><code>tail -f /var/log/net-autoorder.log</code></pre>
-  <p>지울 때는 <code>sudo ./install.sh uninstall</code>.</p>
+
+  <p>설치 전에 <code>./net-autoorder.sh --dry-run</code>을 실행하면 30초 동안 회선을 재고, 지금 바꿀 순서를 출력만 한다. 설치하고 나면 실행할 때마다 회선별 측정값과 순서를 바꿨는지가 <code>/var/log/net-autoorder.log</code>에 한 줄씩 남는다. 지울 때는 <code>sudo ./install.sh uninstall</code>을 실행한다.</p>
 
   <h2>순서를 자주 바꾸지 않는 이유</h2>
-  <p>순서가 바뀌면 기본 경로가 다른 인터페이스로 넘어가서 SSH나 화상회의 같은 연결이 끊긴다. 그래서 회선끼리 차이가 작으면 지금 순서를 그대로 두고, 1순위 회선으로 트래픽이 많이 오가는 중이면 그 주기는 건너뛴다. 1순위의 손실률이 크면 쓰는 중이어도 바꾼다. 망가진 회선에서도 재전송 트래픽은 계속 흐르니, 사용량만 보고 미루면 영영 넘어가지 못한다.</p>
-  <p>대역폭은 재지 않는다. 회선마다 파일을 받아 보려면 5분마다 트래픽이 크게 나가고, 휴대폰 테더링이면 요금까지 붙는다.</p>
+  <p>서비스 순서가 바뀌면 기본 경로가 다른 인터페이스로 넘어가면서 SSH나 화상회의 같은 연결이 끊긴다. 그래서 회선끼리 차이가 작으면 순서를 그대로 두고, 1순위 회선으로 트래픽이 많이 오가는 중이면 그 회차는 건너뛴다. 다만 1순위의 손실률이 크면 쓰는 중이어도 바꾼다. 망가진 회선에서도 재전송 트래픽은 계속 흐르기 때문에, 사용량만 보면 넘어갈 때를 놓친다.</p>
 
-  <h2>알고 쓸 것</h2>
+  <h2>주의할 점</h2>
   <ul>
-    <li>ping 대상이 <code>1.1.1.1</code> 하나라서, 이 주소를 막는 네트워크에서는 모든 회선이 실패로 나와 아무것도 바꾸지 않는다.</li>
-    <li>테더링도 후보에 들어간다. 유선과 Wi-Fi가 같이 나빠지면 휴대폰 데이터로 넘어갈 수 있다.</li>
+    <li>휴대폰 USB 테더링도 후보에 들어가므로, 유선과 Wi-Fi가 함께 나빠지면 휴대폰 데이터로 넘어갈 수 있다.</li>
+    <li>대역폭은 재지 않는다. 손실률과 RTT가 비슷하면 더 빠른 회선이 있어도 넘어가지 않는다.</li>
+    <li>ping 대상이 <code>1.1.1.1</code> 하나라서, 이 주소를 막은 네트워크에서는 순서를 바꾸지 않는다.</li>
   </ul>
 
   <footer><a href="https://github.com/wonjiko/macos-net-autoorder">GitHub 저장소</a></footer>
 </main>
-
-<script>
-// net-autoorder.sh 의 decide 와 같은 규칙
-const LOSS_MARGIN = 5, RTT_RATIO = 0.7, HOLD_LOSS = 20, HOLD_RATE = 100;
-
-const services = [
-  { id: 'lan', name: 'USB 10/100/1000 LAN', dev: 'en8', loss: 0, rtt: 3 },
-  { id: 'wifi', name: 'Wi-Fi', dev: 'en0', loss: 0, rtt: 9 },
-  { id: 'phone', name: 'iPhone USB', dev: 'en9', loss: 0, rtt: 45 },
-];
-let order = services.map(s => s.id);
-let traffic = 40;
-const byId = id => services.find(s => s.id === id);
-
-function better(a, b) {
-  if (b.loss - a.loss >= LOSS_MARGIN) return true;
-  if (a.loss - b.loss >= LOSS_MARGIN) return false;
-  return a.rtt < b.rtt * RTT_RATIO;
-}
-
-function decide(current, rate) {
-  const top = byId(current[0]);
-  if (top.loss < HOLD_LOSS && rate > HOLD_RATE) return { next: current, held: true };
-  const o = current.map(byId);
-  for (let i = 1; i < o.length; i++)
-    for (let j = i; j > 0 && better(o[j], o[j - 1]); j--) [o[j], o[j - 1]] = [o[j - 1], o[j]];
-  return { next: o.map(s => s.id), held: false };
-}
-
-const list = document.getElementById('services');
-const verdict = document.getElementById('verdict');
-
-function dotClass(s) { return s.loss >= HOLD_LOSS ? 'bad' : s.loss >= LOSS_MARGIN ? 'warn' : ''; }
-
-function render() {
-  list.innerHTML = '';
-  order.forEach((id, i) => {
-    const s = byId(id);
-    const li = document.createElement('li');
-    li.className = 'svc';
-    li.dataset.id = id;
-    li.innerHTML = `
-      <span class="rank">${i + 1}</span>
-      <div class="svc-title"><span class="dot ${dotClass(s)}"></span>${s.name} <small>${s.dev}</small></div>
-      <div class="sliders">
-        <label>손실률 <output>${s.loss}%</output>
-          <input type="range" min="0" max="100" step="1" value="${s.loss}" data-k="loss" aria-label="${s.name} 손실률"></label>
-        <label>RTT <output>${s.rtt}ms</output>
-          <input type="range" min="1" max="300" step="1" value="${s.rtt}" data-k="rtt" aria-label="${s.name} RTT"></label>
-      </div>
-      <div class="traffic">
-        <label>1순위 송수신량 <output>${traffic}KB/s</output>
-          <input type="range" min="0" max="1000" step="10" value="${traffic}" data-k="traffic" aria-label="1순위 트래픽"></label>
-      </div>`;
-    list.appendChild(li);
-  });
-}
-
-list.addEventListener('input', e => {
-  const input = e.target, k = input.dataset.k;
-  if (!k) return;
-  const v = Number(input.value);
-  const out = input.previousElementSibling;
-  if (k === 'traffic') { traffic = v; out.textContent = v + 'KB/s'; return; }
-  const s = byId(input.closest('.svc').dataset.id);
-  s[k] = v;
-  out.textContent = v + (k === 'loss' ? '%' : 'ms');
-  input.closest('.svc').querySelector('.dot').className = 'dot ' + dotClass(s);
-});
-
-const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-document.getElementById('run').addEventListener('click', () => {
-  const { next, held } = decide(order, traffic);
-  const top = byId(order[0]);
-  if (held) {
-    verdict.innerHTML = `<strong>보류.</strong> ${top.name}에서 ${traffic}KB/s가 오가는 중이고 손실률 ${top.loss}%는 견딜 만해서, 연결이 끊기지 않게 이번 주기는 건너뛴다.`;
-    return;
-  }
-  if (next.join() === order.join()) {
-    verdict.innerHTML = `<strong>유지.</strong> 지금 순서를 뒤집을 만큼 차이 나는 회선이 없다.`;
-    return;
-  }
-  // 순서가 바뀐 행이 제자리에서 새 자리로 미끄러지게 한다
-  const before = new Map([...list.children].map(li => [li.dataset.id, li.getBoundingClientRect().top]));
-  order = next;
-  render();
-  if (!reduceMotion) for (const li of list.children) {
-    const dy = before.get(li.dataset.id) - li.getBoundingClientRect().top;
-    if (!dy) continue;
-    li.style.transform = `translateY(${dy}px)`;
-    li.style.zIndex = dy > 0 ? 1 : 0;
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      li.style.transition = 'transform 420ms cubic-bezier(.2,.7,.2,1)';
-      li.style.transform = '';
-    }));
-  }
-  verdict.innerHTML = order[0] === top.id
-    ? `<strong>적용.</strong> 1순위는 그대로고 아래 순서만 바꿨다.`
-    : `<strong>적용.</strong> 1순위를 ${byId(order[0]).name}에 넘겼다.`;
-});
-
-render();
-</script>
 </body>
 </html>
