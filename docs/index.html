@@ -139,7 +139,7 @@ cd macos-net-autoorder</code></pre>
 <pre><code>tail -f /var/log/net-autoorder.log</code></pre>
   <p>한 줄은 이런 모양입니다.</p>
 <pre><code>2026-10-14 11:31:59 keep  rate=311173B/s [USB 10/100/1000 LAN 0.0% 2.935ms] [Wi-Fi 0.0% 9.049ms]</code></pre>
-  <p>날짜 뒤의 <code>keep</code>은 순서를 그대로 뒀다는 뜻이고, 순서를 바꿨다면 <code>apply</code>와 함께 줄 끝에 새 순서가 붙습니다. <code>rate</code>는 1순위 회선으로 초당 오간 데이터 양이고, 대괄호 안은 회선별 손실률과 RTT입니다.</p>
+  <p>날짜 뒤의 <code>keep</code>은 순서를 그대로 뒀다는 뜻이고, 순서를 바꿨다면 <code>apply</code>와 함께 줄 끝에 새 순서가 붙습니다. <code>rate</code>는 1순위 회선으로 초당 오간 데이터 양이고, 대괄호 안은 회선별 손실률과 RTT입니다. 로그가 10MB를 넘으면 직전 로그를 압축본 하나로 남기고 새로 쓰기 시작합니다.</p>
   <p>실제로 순서가 바뀌었는지는 시스템 설정 &gt; 네트워크에서 목록 아래 <code>⋯</code> 메뉴의 "서비스 순서 설정"으로도 볼 수 있습니다.</p>
 
   <h2>알아 둘 점</h2>
