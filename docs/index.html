@@ -99,10 +99,10 @@ footer { margin-top: 72px; font-size: 14px; color: var(--muted); }
 <main>
   <p class="name">macos-net-autoorder</p>
   <h1>유선이 나빠지면 다른 회선으로 넘어간다</h1>
-  <p class="lede">macOS는 케이블이 꽂혀 있는 한 패킷이 새고 느려진 유선을 계속 쓴다. macos-net-autoorder는 5분마다 모든 회선에 ping을 보내 손실률과 지연이 나은 회선을 서비스 순서 맨 위로 올린다.</p>
+  <p class="lede">macOS는 유선이 꽂혀 있으면 패킷이 새고 느려져도 Wi-Fi로 넘어가지 않는다. 링크가 끊기거나 IP를 못 받는 것처럼 연결 자체가 안 될 때만 순위를 내리기 때문이다. macos-net-autoorder는 5분마다 모든 회선에 ping을 보내 확실히 나은 회선을 서비스 순서 맨 위로 올린다.</p>
 
   <section class="demo" aria-labelledby="demo-title">
-    <p class="demo-head" id="demo-title">회선 상태를 바꾼 뒤 다음 주기를 실행해 보자. 스크립트와 같은 규칙으로 순서를 다시 매긴다.</p>
+    <p class="demo-head" id="demo-title">회선 상태를 바꾸고 다음 주기를 돌려 보자. 실제 스크립트와 같은 규칙으로 순서가 바뀐다.</p>
     <ol class="services" id="services"></ol>
     <div class="controls">
       <button type="button" id="run">다음 주기 실행</button>
@@ -110,30 +110,23 @@ footer { margin-top: 72px; font-size: 14px; color: var(--muted); }
     </div>
   </section>
 
-  <h2>macOS가 넘어가지 않는 이유</h2>
-  <p>macOS는 링크가 끊기거나, IP를 못 받거나, 라우터가 ARP에 응답하지 않을 때만 서비스 순위를 내린다. 손실률과 지연은 순위에 들어가지 않는다.</p>
-
-  <h2>순서를 정하는 규칙</h2>
-  <ul>
-    <li>IPv4 주소가 있는 모든 서비스에서 동시에 <code>1.1.1.1</code>로 ping을 30회씩 보낸다. ping은 서비스마다 해당 인터페이스에 고정해 보내므로, 1순위가 아닌 회선도 따로 잴 수 있다.</li>
-    <li>손실률이 5%p 이상 낮은 서비스를 앞세운다. 손실률 차이가 그보다 작으면 RTT가 상대의 70% 미만인 서비스만 앞세우므로, 평소 유선과 Wi-Fi의 몇 ms 차이로는 순서가 바뀌지 않는다.</li>
-    <li>1순위의 손실률이 20% 미만이고 ping을 보내는 30초 동안 평균 송수신량이 100KB/s를 넘으면, 그 주기에는 순서 변경을 보류한다. 순서가 바뀌면 SSH나 화상회의 같은 기존 연결이 끊기기 때문이다.</li>
-    <li>1순위의 손실률이 20% 이상이면 사용 중이어도 보류하지 않고 순서를 바꾼다. 나빠진 회선에서도 재전송 때문에 트래픽은 계속 생기므로, 트래픽만 보고 보류하면 나빠진 유선에 계속 머물게 된다.</li>
-  </ul>
-
   <h2>설치</h2>
-<pre><code>git clone git@github.com:wonjiko/macos-net-autoorder.git
+<pre><code>git clone https://github.com/wonjiko/macos-net-autoorder.git
 cd macos-net-autoorder
+./net-autoorder.sh --dry-run   # 30초 동안 재고, 바꿀 순서만 출력한다
 sudo ./install.sh</code></pre>
-  <p>서비스 순서를 바꾸려면 관리자 권한이 필요해서, 설치하면 LaunchDaemon이 root 권한으로 5분마다 스크립트를 실행한다. 실행 내역은 아래 명령으로 확인할 수 있다.</p>
+  <p>서비스 순서를 바꾸려면 root 권한이 필요해서 LaunchDaemon으로 설치된다. 실행할 때마다 회선별 손실률과 RTT, 순서를 바꿨는지가 로그에 한 줄씩 남는다.</p>
 <pre><code>tail -f /var/log/net-autoorder.log</code></pre>
-  <p>제거하려면 <code>sudo ./install.sh uninstall</code>을 실행한다.</p>
+  <p>지울 때는 <code>sudo ./install.sh uninstall</code>.</p>
 
-  <h2>한계</h2>
+  <h2>순서를 자주 바꾸지 않는 이유</h2>
+  <p>순서가 바뀌면 기본 경로가 다른 인터페이스로 넘어가서 SSH나 화상회의 같은 연결이 끊긴다. 그래서 회선끼리 차이가 작으면 지금 순서를 그대로 두고, 1순위 회선으로 트래픽이 많이 오가는 중이면 그 주기는 건너뛴다. 1순위의 손실률이 크면 쓰는 중이어도 바꾼다. 망가진 회선에서도 재전송 트래픽은 계속 흐르니, 사용량만 보고 미루면 영영 넘어가지 못한다.</p>
+  <p>대역폭은 재지 않는다. 회선마다 파일을 받아 보려면 5분마다 트래픽이 크게 나가고, 휴대폰 테더링이면 요금까지 붙는다.</p>
+
+  <h2>알고 쓸 것</h2>
   <ul>
-    <li>네트워크 상태는 <code>1.1.1.1</code> 한 곳을 기준으로 측정한다. 이 주소를 막는 네트워크에서는 모든 회선이 실패로 나오므로 순서를 그대로 둔다.</li>
-    <li>휴대폰 테더링도 후보에 들어간다. 유선과 Wi-Fi가 함께 나빠지면 테더링이 1순위가 되어 데이터 요금이 나갈 수 있다.</li>
-    <li>손실률과 지연만 비교하므로, 둘이 비슷하면 대역폭이 더 큰 회선이 있어도 현재 순서를 유지한다.</li>
+    <li>ping 대상이 <code>1.1.1.1</code> 하나라서, 이 주소를 막는 네트워크에서는 모든 회선이 실패로 나와 아무것도 바꾸지 않는다.</li>
+    <li>테더링도 후보에 들어간다. 유선과 Wi-Fi가 같이 나빠지면 휴대폰 데이터로 넘어갈 수 있다.</li>
   </ul>
 
   <footer><a href="https://github.com/wonjiko/macos-net-autoorder">GitHub 저장소</a></footer>
@@ -214,11 +207,11 @@ document.getElementById('run').addEventListener('click', () => {
   const { next, held } = decide(order, traffic);
   const top = byId(order[0]);
   if (held) {
-    verdict.innerHTML = `<strong>보류.</strong> 1순위 ${top.name}의 손실률이 ${top.loss}%로 ${HOLD_LOSS}% 미만이고, 송수신량이 ${traffic}KB/s로 ${HOLD_RATE}KB/s를 넘어서 지금 쓰는 연결이 끊기지 않게 순서를 그대로 둔다.`;
+    verdict.innerHTML = `<strong>보류.</strong> ${top.name}에서 ${traffic}KB/s가 오가는 중이고 손실률 ${top.loss}%는 견딜 만해서, 연결이 끊기지 않게 이번 주기는 건너뛴다.`;
     return;
   }
   if (next.join() === order.join()) {
-    verdict.innerHTML = `<strong>유지.</strong> 앞 회선보다 확실히 나은 회선이 없다.`;
+    verdict.innerHTML = `<strong>유지.</strong> 지금 순서를 뒤집을 만큼 차이 나는 회선이 없다.`;
     return;
   }
   // 순서가 바뀐 행이 제자리에서 새 자리로 미끄러지게 한다
@@ -236,7 +229,7 @@ document.getElementById('run').addEventListener('click', () => {
     }));
   }
   verdict.innerHTML = order[0] === top.id
-    ? `<strong>적용.</strong> 1순위는 그대로 두고 아래 순서를 바꿨다.`
+    ? `<strong>적용.</strong> 1순위는 그대로고 아래 순서만 바꿨다.`
     : `<strong>적용.</strong> 1순위를 ${byId(order[0]).name}에 넘겼다.`;
 });
 
