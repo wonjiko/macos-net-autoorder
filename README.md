@@ -1,4 +1,4 @@
-# net-autoorder
+# macos-net-autoorder
 
 macOS 네트워크 서비스 순서를 회선 품질에 따라 5분마다 다시 매긴다. 유선이 연결된 채로 품질만 나빠졌을 때 Wi-Fi 같은 다른 회선으로 넘어가게 한다.
 
@@ -22,8 +22,8 @@ macOS는 링크가 끊기거나, IP를 못 받거나, 라우터가 ARP에 응답
 ## 설치
 
 ```sh
-git clone git@github.com:wonjiko/net-autoorder.git
-cd net-autoorder
+git clone git@github.com:wonjiko/macos-net-autoorder.git
+cd macos-net-autoorder
 sudo ./install.sh
 ```
 
