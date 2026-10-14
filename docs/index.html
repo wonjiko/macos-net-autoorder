@@ -11,16 +11,24 @@
   --bg: #FFFFFF;
   --ink: #18202B;
   --muted: #5B6675;
+  --line: #DCE1E7;
+  --panel: #F5F7F9;
   --link: #2459C4;
   --code-bg: #EEF1F4;
+  --good: #2E9E4F;
+  --bad: #CC4236;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #151A21;
     --ink: #E6EAEF;
     --muted: #9AA5B3;
+    --line: #2F3843;
+    --panel: #1C232C;
     --link: #79A2F2;
     --code-bg: #232B35;
+    --good: #46BE69;
+    --bad: #E8685C;
   }
 }
 * { box-sizing: border-box; }
@@ -34,43 +42,121 @@ body {
   line-height: 1.75;
   word-break: keep-all;
 }
-main { max-width: 42rem; margin: 0 auto; padding: 56px 16px 80px; }
+main { max-width: 44rem; margin: 0 auto; padding: 56px 16px 80px; }
 a { color: var(--link); }
 :focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
-h1 { font-size: 30px; line-height: 1.3; letter-spacing: -0.01em; margin: 0 0 16px; }
-h2 { font-size: 20px; margin: 48px 0 10px; }
+h1 { font-size: 32px; line-height: 1.3; letter-spacing: -0.01em; margin: 0 0 12px; }
+h2 { font-size: 21px; margin: 56px 0 12px; }
 p { margin: 0 0 14px; }
-ul { padding-left: 1.2em; margin: 0; }
-li { margin-bottom: 8px; }
-code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.88em; }
+ul, ol { padding-left: 1.3em; margin: 0 0 14px; }
+li { margin-bottom: 10px; }
+li > p { margin: 4px 0 0; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.86em; }
 code { background: var(--code-bg); padding: 0.1em 0.35em; border-radius: 4px; }
-pre { background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; line-height: 1.6; margin: 0 0 16px; }
+pre { background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; line-height: 1.6; margin: 8px 0 16px; }
 pre code { background: none; padding: 0; }
-footer { margin-top: 48px; font-size: 15px; color: var(--muted); }
+.intro { font-size: 18px; }
+.links { color: var(--muted); font-size: 15px; }
+
+/* 순서 변경 전후 */
+figure { margin: 20px 0 8px; }
+.orders { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; }
+.order { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.order h3 { font-size: 14px; font-weight: 600; color: var(--muted); margin: 0 0 8px; }
+.order ol { margin: 0; padding-left: 1.3em; font-size: 15px; }
+.order li { margin: 0 0 6px; }
+.order li:last-child { margin-bottom: 0; }
+.order small { color: var(--muted); font-variant-numeric: tabular-nums; display: block; line-height: 1.4; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--good); margin-right: 6px; vertical-align: 1px; }
+.dot.bad { background: var(--bad); }
+.arrow { color: var(--muted); font-size: 22px; }
+figcaption { font-size: 15px; color: var(--muted); margin-top: 10px; }
+@media (max-width: 560px) {
+  .orders { grid-template-columns: 1fr; }
+  .arrow { transform: rotate(90deg); justify-self: center; }
+}
+footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 15px; color: var(--muted); }
 </style>
 </head>
 <body>
 <main>
   <h1>macos-net-autoorder</h1>
-  <p>유선이 연결된 채로 느려지거나 패킷이 새면 Wi-Fi 같은 다른 회선으로 넘어가게 해 주는 macOS LaunchDaemon이다. macOS는 링크가 끊기거나 IP를 못 받을 때만 다른 회선으로 넘어가기 때문에, 이 스크립트가 5분마다 IPv4 주소가 있는 모든 네트워크 서비스에 ping을 보내고 손실률과 RTT가 확실히 나은 서비스를 서비스 순서 맨 위로 올린다.</p>
+  <p class="intro">유선이 연결된 채로 느려지거나 패킷이 새면, Wi-Fi 같은 다른 회선으로 넘어가게 해 주는 macOS용 백그라운드 서비스입니다. 5분마다 연결된 회선을 모두 재 보고, 상태가 확실히 나은 회선을 macOS 네트워크 서비스 순서 맨 위로 올립니다.</p>
+  <p class="links"><a href="https://github.com/wonjiko/macos-net-autoorder">GitHub 저장소</a>에서 받을 수 있습니다.</p>
 
+  <h2>이런 Mac에서 쓰면 좋습니다</h2>
+  <p>책상에서는 유선을 꽂고, Wi-Fi도 켜 둔 채로 쓰는 Mac이 대상입니다. 허브나 공유기 문제로 유선에서 패킷이 새기 시작해도 macOS는 Wi-Fi로 넘어가지 않습니다. macOS가 회선을 바꾸는 때는 케이블이 빠지거나 IP를 못 받는 것처럼 연결 자체가 끊겼을 때뿐이라, 케이블이 꽂혀 있는 한 웹페이지가 멈추고 화상회의가 끊겨도 나빠진 유선을 계속 씁니다. 그럴 때마다 케이블을 뽑거나 네트워크 설정에서 순서를 손으로 바꾸던 일을 이 서비스가 대신 합니다.</p>
+
+  <h2>5분마다 하는 일</h2>
+  <ol>
+    <li>IP 주소가 있는 회선마다 <code>1.1.1.1</code>로 ping을 30번 보냅니다. ping은 회선마다 그 인터페이스로만 나가게 해서, 지금 쓰지 않는 Wi-Fi의 상태도 따로 잴 수 있습니다.</li>
+    <li>응답이 돌아오지 않은 비율인 손실률을 먼저 비교하고, 손실률이 비슷하면 응답 시간인 RTT를 비교합니다. 차이가 작으면 순서를 건드리지 않습니다.</li>
+    <li>더 나은 회선이 있으면 그 회선을 네트워크 서비스 순서 맨 위로 올립니다. 그러면 macOS가 그 회선으로 인터넷을 내보냅니다.</li>
+  </ol>
+
+  <figure>
+    <div class="orders">
+      <div class="order">
+        <h3>유선에서 패킷이 새기 시작할 때</h3>
+        <ol>
+          <li><span class="dot bad"></span>USB LAN<small>손실률 32%, RTT 180ms</small></li>
+          <li><span class="dot"></span>Wi-Fi<small>손실률 0%, RTT 9ms</small></li>
+        </ol>
+      </div>
+      <span class="arrow" aria-hidden="true">→</span>
+      <div class="order">
+        <h3>다음 측정 뒤</h3>
+        <ol>
+          <li><span class="dot"></span>Wi-Fi<small>손실률 0%, RTT 9ms</small></li>
+          <li><span class="dot bad"></span>USB LAN<small>손실률 32%, RTT 180ms</small></li>
+        </ol>
+      </div>
+    </div>
+    <figcaption>측정값은 설명을 위한 예시입니다. 유선이 회복돼 Wi-Fi보다 확실히 나아지면 그다음 측정에서 다시 위로 올라갑니다.</figcaption>
+  </figure>
+
+  <h2>설치</h2>
+  <ol>
+    <li>
+      저장소를 받습니다.
 <pre><code>git clone https://github.com/wonjiko/macos-net-autoorder.git
-cd macos-net-autoorder
-sudo ./install.sh</code></pre>
+cd macos-net-autoorder</code></pre>
+    </li>
+    <li>
+      설치하기 전에 이 Mac에서 어떤 결과가 나오는지 미리 볼 수 있습니다. 30초 동안 회선을 재고 결과만 출력하며, 설정은 바꾸지 않습니다.
+<pre><code>./net-autoorder.sh --dry-run</code></pre>
+      <p>지금 순서가 가장 낫다면 <code>keep</code>, 바꿀 회선이 있다면 <code>apply</code>와 새 순서가 나옵니다.</p>
+    </li>
+    <li>
+      설치합니다. 네트워크 서비스 순서를 바꾸려면 관리자 권한이 필요해서 Mac 암호를 묻습니다.
+<pre><code>sudo ./install.sh</code></pre>
+      <p>설치가 끝나면 Mac을 켤 때마다 자동으로 시작되고, 바로 첫 측정을 합니다.</p>
+    </li>
+  </ol>
 
-  <p>설치 전에 <code>./net-autoorder.sh --dry-run</code>을 실행하면 30초 동안 회선을 재고, 지금 바꿀 순서를 출력만 한다. 설치하고 나면 실행할 때마다 회선별 측정값과 순서를 바꿨는지가 <code>/var/log/net-autoorder.log</code>에 한 줄씩 남는다. 지울 때는 <code>sudo ./install.sh uninstall</code>을 실행한다.</p>
+  <h2>잘 돌고 있는지 확인하기</h2>
+  <p>측정할 때마다 로그에 한 줄씩 남습니다. 아래 명령을 띄워 두면 새 줄이 생길 때마다 보입니다.</p>
+<pre><code>tail -f /var/log/net-autoorder.log</code></pre>
+  <p>한 줄은 이런 모양입니다.</p>
+<pre><code>2026-10-14 11:31:59 keep  rate=311173B/s [USB 10/100/1000 LAN 0.0% 2.935ms] [Wi-Fi 0.0% 9.049ms]</code></pre>
+  <p>날짜 뒤의 <code>keep</code>은 순서를 그대로 뒀다는 뜻이고, 순서를 바꿨다면 <code>apply</code>와 함께 줄 끝에 새 순서가 붙습니다. <code>rate</code>는 1순위 회선으로 초당 오간 데이터 양이고, 대괄호 안은 회선별 손실률과 RTT입니다.</p>
+  <p>실제로 순서가 바뀌었는지는 시스템 설정 &gt; 네트워크에서 목록 아래 <code>⋯</code> 메뉴의 "서비스 순서 설정"으로도 볼 수 있습니다.</p>
 
   <h2>순서를 자주 바꾸지 않는 이유</h2>
-  <p>서비스 순서가 바뀌면 기본 경로가 다른 인터페이스로 넘어가면서 SSH나 화상회의 같은 연결이 끊긴다. 그래서 회선끼리 차이가 작으면 순서를 그대로 두고, 1순위 회선으로 트래픽이 많이 오가는 중이면 그 회차는 건너뛴다. 다만 1순위의 손실률이 크면 쓰는 중이어도 바꾼다. 망가진 회선에서도 재전송 트래픽은 계속 흐르기 때문에, 사용량만 보면 넘어갈 때를 놓친다.</p>
+  <p>서비스 순서가 바뀌면 인터넷이 나가는 회선이 바뀌면서, 열려 있던 SSH나 화상회의 연결이 끊깁니다. 그래서 회선끼리 차이가 작으면 순서를 그대로 두고, 지금 1순위 회선으로 데이터가 많이 오가는 중이면 그 회차는 건너뜁니다. 다만 1순위 회선의 손실률이 크면 쓰는 중이어도 바꿉니다. 망가진 회선에서도 재전송 때문에 데이터는 계속 오가므로, 사용량만 보고 미루면 넘어갈 때를 놓치기 때문입니다.</p>
 
-  <h2>주의할 점</h2>
+  <h2>알아 둘 점</h2>
   <ul>
-    <li>휴대폰 USB 테더링도 후보에 들어가므로, 유선과 Wi-Fi가 함께 나빠지면 휴대폰 데이터로 넘어갈 수 있다.</li>
-    <li>대역폭은 재지 않는다. 손실률과 RTT가 비슷하면 더 빠른 회선이 있어도 넘어가지 않는다.</li>
-    <li>ping 대상이 <code>1.1.1.1</code> 하나라서, 이 주소를 막은 네트워크에서는 순서를 바꾸지 않는다.</li>
+    <li>USB로 연결한 휴대폰 테더링도 후보에 들어갑니다. 유선과 Wi-Fi가 함께 나빠지면 휴대폰 데이터로 넘어갈 수 있습니다.</li>
+    <li>회선 속도는 재지 않습니다. 손실률과 RTT가 비슷하면 더 빠른 회선이 있어도 넘어가지 않습니다.</li>
+    <li>ping을 <code>1.1.1.1</code> 한 곳에만 보내므로, 이 주소를 막아 둔 회사나 학교 네트워크에서는 모든 회선이 실패로 나와 순서를 바꾸지 않습니다.</li>
   </ul>
 
-  <footer><a href="https://github.com/wonjiko/macos-net-autoorder">GitHub 저장소</a></footer>
+  <h2>지우기</h2>
+  <p>저장소 폴더에서 아래 명령을 실행하면 서비스가 멈추고 설치한 파일이 지워집니다. 로그 파일은 남겨 둡니다.</p>
+<pre><code>sudo ./install.sh uninstall</code></pre>
+
+  <footer>소스와 자세한 동작은 <a href="https://github.com/wonjiko/macos-net-autoorder">GitHub 저장소</a>의 README에 있습니다.</footer>
 </main>
 </body>
 </html>
