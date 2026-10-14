@@ -1,6 +1,6 @@
 # macos-net-autoorder
 
-유선이 연결된 채로 느려지거나 패킷이 새면 Wi-Fi 같은 다른 회선으로 넘어가게 해 주는 macOS LaunchDaemon이다. macOS는 링크가 끊기거나 IP를 못 받을 때만 다른 회선으로 넘어가기 때문에, 이 스크립트가 5분마다 IPv4 주소가 있는 모든 네트워크 서비스에 ping을 보내고 손실률과 RTT가 확실히 나은 서비스를 서비스 순서 맨 위로 올린다.
+유선이 연결된 채로 패킷 손실이 생기거나 응답이 느려지면 Wi-Fi 같은 다른 회선으로 넘어가게 해 주는 macOS LaunchDaemon이다. macOS는 링크가 끊기거나 IP를 못 받을 때만 다른 회선으로 넘어가기 때문에, 이 스크립트가 5분마다 IPv4 주소가 있는 모든 네트워크 서비스에 ping을 보내고 손실률과 RTT가 확실히 나은 서비스를 서비스 순서 맨 위로 올린다.
 
 ```sh
 git clone https://github.com/wonjiko/macos-net-autoorder.git
